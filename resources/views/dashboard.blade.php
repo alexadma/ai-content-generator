@@ -1,392 +1,324 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-            {{ __('AI Content Generator') }}
-        </h2>
+        <div class="flex items-center justify-between">
+            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
+                {{ __('AI Content Generator') }}
+            </h2>
+            <a href="{{ route('content.history') }}" 
+               class="text-sm text-purple-600 dark:text-purple-400 hover:underline font-medium">
+                View All History →
+            </a>
+        </div>
     </x-slot>
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+
             <!-- Welcome Banner -->
-            <div class="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-lg shadow-lg mb-8 overflow-hidden">
+            <div class="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl shadow-lg mb-8 overflow-hidden">
                 <div class="p-6 text-white">
-                    <h3 class="text-2xl font-bold mb-2">Welcome back, {{ Auth::user()->name }}! 👋</h3>
-                    <p class="text-purple-100">Ready to create amazing content today? You have <span class="font-bold">20</span> free generations remaining this month.</p>
+                    <h3 class="text-2xl font-bold mb-1">Welcome back, {{ Auth::user()->name }}! 👋</h3>
+                    <p class="text-purple-100 text-sm">Powered by Google Gemini AI — generate professional content in seconds.</p>
                 </div>
             </div>
 
             <!-- Content Generator Form -->
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mb-8">
+            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-xl mb-8">
                 <div class="p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Generate New Content</h3>
-                    
-                    <form id="contentForm" class="space-y-6">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6">✨ Generate New Content</h3>
+
+                    <!-- Error Alert -->
+                    <div id="errorAlert" class="hidden mb-4 p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-lg">
+                        <div class="flex items-start gap-3">
+                            <span class="text-red-500 text-xl">⚠️</span>
+                            <div>
+                                <p class="font-semibold text-red-800 dark:text-red-300 text-sm">Generation Failed</p>
+                                <p id="errorMessage" class="text-red-600 dark:text-red-400 text-sm mt-1"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form id="contentForm" class="space-y-5">
                         @csrf
-                        <!-- Content Type -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Content Type</label>
-                            <select id="contentType" name="content_type" class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-purple-500 focus:ring-purple-500">
-                                <option value="email">📧 Email Newsletter</option>
-                                <option value="blog">📝 Blog Post</option>
-                                <option value="ad">📣 Ad Copy</option>
-                                <option value="social">📱 Social Media</option>
-                                <option value="product">🛍 Product Description</option>
-                                <option value="press">📰 Press Release</option>
-                                <option value="landing">🎯 Landing Page</option>
-                                <option value="script">🎬 Video Script</option>
-                            </select>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <!-- Content Type -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Content Type</label>
+                                <select id="contentType" name="content_type"
+                                        class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-purple-500 focus:ring-purple-500">
+                                    <option value="Email Newsletter">📧 Email Newsletter</option>
+                                    <option value="Blog Post">📝 Blog Post</option>
+                                    <option value="Ad Copy">📣 Ad Copy</option>
+                                    <option value="Social Media Post">📱 Social Media Post</option>
+                                    <option value="Product Description">🛍 Product Description</option>
+                                    <option value="Press Release">📰 Press Release</option>
+                                    <option value="Landing Page Copy">🎯 Landing Page Copy</option>
+                                    <option value="Video Script">🎬 Video Script</option>
+                                </select>
+                            </div>
+
+                            <!-- Tone -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tone of Voice</label>
+                                <select id="tone" name="tone"
+                                        class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-purple-500 focus:ring-purple-500">
+                                    <option value="Professional">Professional</option>
+                                    <option value="Casual & Friendly">Casual & Friendly</option>
+                                    <option value="Persuasive">Persuasive</option>
+                                    <option value="Witty & Humorous">Witty & Humorous</option>
+                                    <option value="Empathetic">Empathetic</option>
+                                    <option value="Formal">Formal</option>
+                                </select>
+                            </div>
                         </div>
 
                         <!-- Topic -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Topic / Subject</label>
-                            <input type="text" id="topic" name="topic" placeholder="e.g., Summer sale announcement, Product launch, Holiday promotion..." 
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Topic / Subject <span class="text-red-400">*</span></label>
+                            <input type="text" id="topic" name="topic"
+                                   placeholder="e.g., Summer sale announcement, Product launch, Holiday promotion..."
                                    class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-purple-500 focus:ring-purple-500">
                         </div>
 
-                        <!-- Target Audience -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Target Audience</label>
-                            <input type="text" id="audience" name="audience" placeholder="e.g., Young professionals, Small business owners, Gen Z..." 
-                                   class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-purple-500 focus:ring-purple-500">
-                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <!-- Keywords -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Keywords</label>
+                                <input type="text" id="keywords" name="keywords"
+                                       placeholder="e.g., diskon, gratis ongkir, limited offer"
+                                       class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-purple-500 focus:ring-purple-500">
+                            </div>
 
-                        <!-- Tone -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tone of Voice</label>
-                            <select id="tone" name="tone" class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-purple-500 focus:ring-purple-500">
-                                <option value="professional">Professional</option>
-                                <option value="casual">Casual & Friendly</option>
-                                <option value="persuasive">Persuasive</option>
-                                <option value="witty">Witty & Humorous</option>
-                                <option value="empathetic">Empathetic</option>
-                                <option value="formal">Formal</option>
-                            </select>
+                            <!-- Target Audience -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Target Audience</label>
+                                <input type="text" id="audience" name="audience"
+                                       placeholder="e.g., Young professionals, Small business owners..."
+                                       class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-purple-500 focus:ring-purple-500">
+                            </div>
                         </div>
 
                         <!-- Additional Instructions -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Additional Instructions (Optional)</label>
-                            <textarea id="instructions" name="instructions" rows="3" 
-                                      placeholder="Add any specific keywords, points to include, or style preferences..." 
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Additional Instructions <span class="text-gray-400 font-normal">(Optional)</span></label>
+                            <textarea id="instructions" name="instructions" rows="3"
+                                      placeholder="Add any specific requirements, style preferences, or extra context..."
                                       class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-purple-500 focus:ring-purple-500"></textarea>
                         </div>
 
                         <!-- Generate Button -->
-                        <div>
-                            <button type="submit" id="generateBtn" class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold py-3 px-6 rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all duration-200 transform hover:scale-[1.02]">
-                                <span id="btnText">✨ Generate Content</span>
-                                <span id="btnLoading" class="hidden">⏳ Generating...</span>
-                            </button>
-                        </div>
+                        <button type="submit" id="generateBtn"
+                                class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold py-3 px-6 rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all duration-200 transform hover:scale-[1.01] disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none">
+                            <span id="btnText">✨ Generate Content</span>
+                            <span id="btnLoading" class="hidden">
+                                <svg class="inline-block animate-spin -mt-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                </svg>
+                                Generating with Gemini AI...
+                            </span>
+                        </button>
                     </form>
                 </div>
             </div>
 
-            <!-- Generated Content Display -->
-            <div id="generatedContent" class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mb-8 hidden">
+            <!-- Generated Content Output -->
+            <div id="generatedContent" class="hidden bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-xl mb-8">
                 <div class="p-6">
                     <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Generated Content</h3>
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Generated Content</h3>
+                            <p id="wordCountBadge" class="text-xs text-gray-500 dark:text-gray-400 mt-1"></p>
+                        </div>
                         <div class="flex gap-2">
-                            <button id="copyBtn" class="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition">
+                            <button id="copyBtn"
+                                    class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition font-medium">
                                 📋 Copy
                             </button>
-                            <button id="downloadBtn" class="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition">
-                                💾 Download
+                            <button id="downloadBtn"
+                                    class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition font-medium">
+                                💾 Download .txt
                             </button>
                         </div>
                     </div>
-                    <div id="contentOutput" class="prose dark:prose-invert max-w-none bg-gray-50 dark:bg-gray-900 p-6 rounded-lg">
-                        <!-- Generated content will appear here -->
+                    <div id="contentOutput"
+                         class="whitespace-pre-wrap prose dark:prose-invert max-w-none bg-gray-50 dark:bg-gray-900 p-6 rounded-lg text-sm text-gray-800 dark:text-gray-200 leading-relaxed border border-gray-200 dark:border-gray-700">
                     </div>
                 </div>
             </div>
 
             <!-- Recent Generations History -->
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
+            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-xl">
                 <div class="p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Recent Generations</h3>
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Recent Generations</h3>
+                        @if($recentGenerations->count() > 0)
+                            <a href="{{ route('content.history') }}" class="text-sm text-purple-600 dark:text-purple-400 hover:underline">View all →</a>
+                        @endif
+                    </div>
+
                     <div id="historyList" class="space-y-3">
-                        <div class="text-center text-gray-500 dark:text-gray-400 py-8">
-                            No generations yet. Create your first content above! ✨
-                        </div>
+                        @forelse($recentGenerations as $gen)
+                            <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition" id="history-{{ $gen->id }}">
+                                <div class="flex justify-between items-start">
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200">
+                                                {{ $gen->content_type }}
+                                            </span>
+                                            <span class="text-xs text-gray-400">{{ $gen->word_count }} words</span>
+                                        </div>
+                                        <p class="font-medium text-gray-900 dark:text-gray-100 text-sm truncate">{{ $gen->topic ?? 'Untitled' }}</p>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">{{ $gen->excerpt }}</p>
+                                    </div>
+                                    <div class="flex items-center gap-2 ml-4 shrink-0">
+                                        <span class="text-xs text-gray-400">{{ $gen->created_at->diffForHumans() }}</span>
+                                        <button onclick="viewGeneration({{ $gen->id }})"
+                                                class="text-xs text-blue-600 dark:text-blue-400 hover:underline">View</button>
+                                        <button onclick="deleteGeneration({{ $gen->id }})"
+                                                class="text-xs text-red-500 hover:underline">Delete</button>
+                                    </div>
+                                </div>
+                            </div>
+                        @empty
+                            <div class="text-center text-gray-500 dark:text-gray-400 py-10">
+                                <p class="text-3xl mb-3">✨</p>
+                                <p>No generations yet. Create your first content above!</p>
+                            </div>
+                        @endforelse
                     </div>
                 </div>
             </div>
+
         </div>
     </div>
 
     @push('scripts')
     <script>
-        // Mock AI Generation (Replace with actual API call)
-        document.getElementById('contentForm').addEventListener('submit', async function(e) {
+        const generateRoute  = "{{ route('content.generate') }}";
+        const historyBaseUrl = "{{ url('/history') }}";
+        const csrfToken      = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+        // ── Form Submit → Gemini API ──────────────────────────────────────────
+        document.getElementById('contentForm').addEventListener('submit', async function (e) {
             e.preventDefault();
-            
-            const generateBtn = document.getElementById('generateBtn');
-            const btnText = document.getElementById('btnText');
+
+            const btn        = document.getElementById('generateBtn');
+            const btnText    = document.getElementById('btnText');
             const btnLoading = document.getElementById('btnLoading');
-            const generatedContentDiv = document.getElementById('generatedContent');
-            const contentOutput = document.getElementById('contentOutput');
-            
-            // Show loading state
+            const errorAlert = document.getElementById('errorAlert');
+            const errorMsg   = document.getElementById('errorMessage');
+
+            // Reset error
+            errorAlert.classList.add('hidden');
+            errorMsg.textContent = '';
+
+            // Loading state
             btnText.classList.add('hidden');
             btnLoading.classList.remove('hidden');
-            generateBtn.disabled = true;
-            
-            // Get form data
-            const contentType = document.getElementById('contentType').options[document.getElementById('contentType').selectedIndex].text;
-            const topic = document.getElementById('topic').value;
-            const audience = document.getElementById('audience').value;
-            const tone = document.getElementById('tone').options[document.getElementById('tone').selectedIndex].text;
-            const instructions = document.getElementById('instructions').value;
-            
-            // Simulate API call delay
-            setTimeout(() => {
-                // Mock generated content based on inputs
-                const mockContent = generateMockContent(contentType, topic, audience, tone, instructions);
-                
-                // Display content
-                contentOutput.innerHTML = `<div class="whitespace-pre-wrap">${mockContent}</div>`;
-                generatedContentDiv.classList.remove('hidden');
-                
-                // Save to history
-                saveToHistory(contentType, topic, mockContent);
-                
-                // Reset button state
+            btn.disabled = true;
+
+            const formData = new FormData(this);
+
+            try {
+                const response = await fetch(generateRoute, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json',
+                    },
+                    body: formData,
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    throw new Error(data.message || 'An unexpected error occurred.');
+                }
+
+                // Show output
+                document.getElementById('contentOutput').textContent = data.content;
+                document.getElementById('wordCountBadge').textContent = `${data.word_count} words • saved to history`;
+                document.getElementById('generatedContent').classList.remove('hidden');
+                document.getElementById('generatedContent').scrollIntoView({ behavior: 'smooth' });
+
+                // Refresh page to update recent history (soft approach)
+                setTimeout(() => location.reload(), 100);
+
+            } catch (err) {
+                errorMsg.textContent = err.message;
+                errorAlert.classList.remove('hidden');
+                errorAlert.scrollIntoView({ behavior: 'smooth' });
+            } finally {
                 btnText.classList.remove('hidden');
                 btnLoading.classList.add('hidden');
-                generateBtn.disabled = false;
-                
-                // Scroll to content
-                generatedContentDiv.scrollIntoView({ behavior: 'smooth' });
-            }, 2000);
+                btn.disabled = false;
+            }
         });
-        
-        // Copy to clipboard
-        document.getElementById('copyBtn')?.addEventListener('click', function() {
-            const content = document.getElementById('contentOutput').innerText;
+
+        // ── Copy to clipboard ─────────────────────────────────────────────────
+        document.getElementById('copyBtn').addEventListener('click', function () {
+            const content = document.getElementById('contentOutput').textContent;
             navigator.clipboard.writeText(content).then(() => {
-                const originalText = this.innerHTML;
+                const orig = this.innerHTML;
                 this.innerHTML = '✅ Copied!';
-                setTimeout(() => {
-                    this.innerHTML = originalText;
-                }, 2000);
+                setTimeout(() => this.innerHTML = orig, 2000);
             });
         });
-        
-        // Download as .txt
-        document.getElementById('downloadBtn')?.addEventListener('click', function() {
-            const content = document.getElementById('contentOutput').innerText;
-            const blob = new Blob([content], { type: 'text/plain' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `generated-content-${Date.now()}.txt`;
+
+        // ── Download as .txt ──────────────────────────────────────────────────
+        document.getElementById('downloadBtn').addEventListener('click', function () {
+            const content = document.getElementById('contentOutput').textContent;
+            const blob    = new Blob([content], { type: 'text/plain' });
+            const url     = URL.createObjectURL(blob);
+            const a       = document.createElement('a');
+            a.href        = url;
+            a.download    = `content-${Date.now()}.txt`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
         });
-        
-        // Mock content generator
-        function generateMockContent(contentType, topic, audience, tone, instructions) {
-            const templates = {
-                '📧 Email Newsletter': `Subject: ${topic || 'Special Announcement'} 🎉
 
-Dear ${audience || 'Valued Customer'},
+        // ── View a past generation ────────────────────────────────────────────
+        async function viewGeneration(id) {
+            try {
+                const res  = await fetch(`${historyBaseUrl}/${id}`, {
+                    headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken }
+                });
+                const data = await res.json();
+                if (!data.success) throw new Error('Not found');
 
-We're excited to share some amazing news with you today! ${topic || 'Our latest offering'} is here to transform the way you work.
-
-✨ What's inside:
-• Exclusive benefits just for you
-• Limited-time offers
-• Early access opportunities
-
-${instructions ? `\nAdditional Notes: ${instructions}\n` : ''}
-
-Ready to get started? Click below to learn more!
-
-Best regards,
-The Inkraft Team
-
-P.S. Don't miss out on this opportunity!`,
-
-                '📝 Blog Post': `# ${topic || 'How to Master Your Content Strategy'}
-
-## Introduction
-
-In today's digital landscape, creating compelling content is more important than ever. Whether you're a ${audience || 'content creator'} or business owner, mastering the art of ${topic || 'content creation'} can set you apart from the competition.
-
-## Key Takeaways
-
-- Understand your ${audience || 'target audience'} deeply
-- Maintain a ${tone || 'professional'} tone throughout
-- Deliver value in every piece
-
-${instructions ? `\n> ${instructions}\n` : ''}
-
-## Conclusion
-
-Start implementing these strategies today and watch your engagement soar!
-
-*What's your biggest content challenge? Share in the comments below!*`,
-
-                '📣 Ad Copy': `🎯 **ATTENTION ${audience?.toUpperCase() || 'EVERYONE'}!** 🎯
-
-${topic || 'Discover'} the solution you've been searching for!
-
-✅ Benefits that matter
-✅ Results you can see
-✅ Satisfaction guaranteed
-
-**${tone || 'Professional'} tone** | Limited time offer
-
-👉 Click here to learn more: [LINK]
-
-${instructions || 'Don\'t wait - this opportunity won\'t last!'}`,
-
-                '📱 Social Media': `${topic || 'Big news'}! 🚀
-
-${audience || 'Everyone'} needs to hear about this. We're taking things to the next level with our ${tone || 'amazing'} new approach.
-
-👇 Drop a 🔥 if you're excited!
-
-${instructions ? `\n${instructions}\n` : ''}
-
-#ContentCreation #AI #Innovation`,
-
-                '🛍 Product Description': `# Introducing ${topic || 'Our Amazing Product'}
-
-## What Makes It Special?
-
-Designed specifically for ${audience || 'modern consumers'}, our product delivers exceptional results with a ${tone || 'professional'} approach.
-
-### Key Features:
-- Premium quality materials
-- User-friendly design
-- Lifetime durability
-
-${instructions ? `\n✨ ${instructions}\n` : ''}
-
-### Why Choose Us?
-
-Join thousands of satisfied customers who've made the switch. Order today and experience the difference!
-
-*Satisfaction guaranteed or your money back*`,
-
-                '📰 Press Release': `**FOR IMMEDIATE RELEASE**
-
-## ${topic || 'Inkraft Announces Revolutionary New Feature'}
-
-**CITY, State** — ${new Date().toLocaleDateString()} — Inkraft, the leading AI content generation platform, today announced ${topic || 'an exciting new development'} that will transform how ${audience || 'businesses'} create content.
-
-"This is a game-changer," said [Spokesperson Name], [Title]. "${instructions || 'Our commitment to innovation continues to drive exceptional results for our users.'}"
-
-### About Inkraft
-Inkraft is revolutionizing content creation with cutting-edge AI technology.
-
-### Media Contact
-[Name]
-[Email]
-[Phone]
-
-###`,
-
-                '🎯 Landing Page': `# ${topic || 'Transform Your Results Today'}
-
-## Join ${audience || 'thousands of successful users'} who've already made the switch
-
-### Why Choose Us?
-✓ ${tone || 'Professional'} quality guaranteed
-✓ Results-driven approach
-✓ Risk-free trial
-
-${instructions ? `💡 ${instructions}\n\n` : ''}
-
-### Limited Time Offer
-Get started now with special pricing!
-
-[CTA BUTTON: Get Started Now →]`,
-
-                '🎬 Video Script': `[SCENE START]
-
-**TITLE:** ${topic || 'The Future of Content Creation'}
-
-**TONE:** ${tone || 'Professional'}
-
-**TARGET AUDIENCE:** ${audience || 'Content creators'}
-
-**VISUAL:** Opening shot of [describe scene]
-
-**VOICEOVER:** 
-"${instructions || 'Welcome to the future of content creation...'}"
-
-**VISUAL:** Cut to [next scene]
-
-**VOICEOVER:**
-"With Inkraft, you can generate professional content in seconds."
-
-**VISUAL:** Final shot with logo
-
-**VOICEOVER:**
-"Start your free trial today at inkraft.com"
-
-[SCENE END]`
-            };
-            
-            let content = templates[contentType] || templates['📧 Email Newsletter'];
-            
-            // Replace placeholders with actual values
-            content = content.replace(/\${topic}/g, topic || 'our latest offering');
-            content = content.replace(/\${audience}/g, audience || 'our valued customers');
-            content = content.replace(/\${tone}/g, tone || 'professional');
-            
-            return content;
-        }
-        
-        // Save to history (localStorage for demo)
-        function saveToHistory(contentType, topic, content) {
-            let history = JSON.parse(localStorage.getItem('contentHistory') || '[]');
-            history.unshift({
-                id: Date.now(),
-                contentType: contentType,
-                topic: topic,
-                content: content.substring(0, 100) + '...',
-                date: new Date().toISOString()
-            });
-            // Keep only last 10 items
-            history = history.slice(0, 10);
-            localStorage.setItem('contentHistory', JSON.stringify(history));
-            displayHistory();
-        }
-        
-        // Display history
-        function displayHistory() {
-            const historyList = document.getElementById('historyList');
-            const history = JSON.parse(localStorage.getItem('contentHistory') || '[]');
-            
-            if (history.length === 0) {
-                historyList.innerHTML = '<div class="text-center text-gray-500 dark:text-gray-400 py-8">No generations yet. Create your first content above! ✨</div>';
-                return;
+                document.getElementById('contentOutput').textContent = data.content;
+                const m = data.meta;
+                document.getElementById('wordCountBadge').textContent =
+                    `${m.content_type} • ${m.word_count} words • ${m.created_at}`;
+                document.getElementById('generatedContent').classList.remove('hidden');
+                document.getElementById('generatedContent').scrollIntoView({ behavior: 'smooth' });
+            } catch (e) {
+                alert('Could not load content.');
             }
-            
-            historyList.innerHTML = history.map(item => `
-                <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition">
-                    <div class="flex justify-between items-start mb-2">
-                        <div>
-                            <span class="font-semibold text-gray-900 dark:text-gray-100">${item.contentType}</span>
-                            <span class="text-sm text-gray-500 dark:text-gray-400 ml-2">${item.topic || 'Untitled'}</span>
-                        </div>
-                        <span class="text-xs text-gray-500 dark:text-gray-400">${new Date(item.date).toLocaleDateString()}</span>
-                    </div>
-                    <p class="text-sm text-gray-600 dark:text-gray-300">${item.content}</p>
-                </div>
-            `).join('');
         }
-        
-        // Load history on page load
-        displayHistory();
+
+        // ── Delete a generation ───────────────────────────────────────────────
+        async function deleteGeneration(id) {
+            if (!confirm('Delete this generation? This cannot be undone.')) return;
+
+            try {
+                const res = await fetch(`${historyBaseUrl}/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' }
+                });
+                const data = await res.json();
+                if (data.success) {
+                    const el = document.getElementById(`history-${id}`);
+                    el?.remove();
+                }
+            } catch (e) {
+                alert('Could not delete.');
+            }
+        }
     </script>
     @endpush
 </x-app-layout>
