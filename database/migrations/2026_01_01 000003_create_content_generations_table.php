@@ -10,16 +10,26 @@ return new class extends Migration
     {
         Schema::create('content_generations', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->string('content_type');
-            $table->string('topic')->nullable();
+
+            $table->foreignId('user_id')
+                ->constrained()
+                ->cascadeOnDelete();
+
+            $table->string('content_type')->index();
+            $table->string('topic')->nullable()->index();
             $table->text('keywords')->nullable();
             $table->string('audience')->nullable();
-            $table->string('tone');
+            $table->string('tone')->index();
             $table->text('instructions')->nullable();
+
             $table->longText('generated_content');
-            $table->integer('word_count')->default(0);
+
+            $table->unsignedInteger('word_count')->default(0);
+
             $table->timestamps();
+
+            // Optional: composite index (buat filter cepat)
+            $table->index(['user_id', 'created_at']);
         });
     }
 

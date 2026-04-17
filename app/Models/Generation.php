@@ -2,11 +2,10 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class ContentGeneration extends Model
+class Generation extends Model
 {
     use HasFactory;
 
@@ -18,7 +17,7 @@ class ContentGeneration extends Model
         'audience',
         'tone',
         'instructions',
-        'generated_content',
+        'content',
         'word_count',
     ];
 
@@ -27,19 +26,8 @@ class ContentGeneration extends Model
         'updated_at' => 'datetime',
     ];
 
-    /**
-     * Relasi ke User
-     */
     public function user()
     {
         return $this->belongsTo(User::class);
-    }
-
-    /**
-     * Accessor: excerpt (preview content)
-     */
-    public function getExcerptAttribute(): string
-    {
-        return Str::limit(strip_tags($this->generated_content), 150);
     }
 }
