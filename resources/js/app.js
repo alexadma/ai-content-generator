@@ -188,3 +188,40 @@ window.addEventListener('scroll', () => {
         nav?.classList.remove('scrolled');
     }
 }, { passive: true });
+
+document.addEventListener('DOMContentLoaded', function () {
+    console.log("DOM READY");
+
+    const form = document.getElementById('contentForm');
+
+    if (!form) {
+        console.log("FORM TIDAK DITEMUKAN");
+        return;
+    }
+
+    console.log("FORM DITEMUKAN");
+
+    form.addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        console.log("SUBMIT KEDETECT");
+
+        const formData = new FormData(form);
+
+        try {
+            const response = await fetch("/generate", {
+                method: "POST",
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: formData
+            });
+
+            const data = await response.json();
+            console.log("RESPONSE:", data);
+
+        } catch (err) {
+            console.error("ERROR:", err);
+        }
+    });
+});
